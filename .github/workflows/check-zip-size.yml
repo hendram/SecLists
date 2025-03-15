@@ -1,0 +1,32 @@
+name: Check Download Size
+
+on:
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  check_download_size:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download repository ZIP
+        run: |
+          wget -O repo.zip https://github.com/hendram/seclists/archive/refs/heads/master.zip
+
+      - name: Check ZIP file size
+        run: du -sh repo.zip  # Print size of the ZIP file
+
+      - name: Extract ZIP file
+        run: unzip repo.zip && mv seclists-master seclists
+
+      - name: Check extracted repo size
+        run: du -sh seclists  # Print size of extracted files
+
+      - name: Find largest files
+        run: find seclists -type f -exec du -h {} + | sort -hr | head -20  # Show top 20 largest files
+
+      - name: Fail if extracted repo exceeds 10GB
+        run: |
+          SIZE=$(du -s seclists | awk '{print $1}')
+          if [ "$SIZE" -gt 10000000 ]; then
+            echo "Repository is too large (>10GB)!"
+            exit 1
+          fi
